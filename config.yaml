@@ -1,0 +1,37 @@
+# =================== 通用设置 ===================
+# 自动化循环的间隔时间（秒），可以适当调高以降低CPU占用
+loop_interval: 0.1
+
+# pyautogui 图像识别的置信度 (0.0 到 1.0)
+# 越高越精确，但也越容易找不到。如果识别不准，可以适当降低此值，例如 0.75
+confidence: 0.8
+
+
+# =================== 游戏逻辑设置 ===================
+# 目标波数
+# 当点击“下一波”的次数达到 (target_wave_count - 1) 次后，脚本会在下一次遇到“下一波”或“结算”时，寻找“退出”按钮。
+# 例如：设置为 6，代表打完第 6 波后退出。
+target_wave_count: 3
+
+# 书籍/卡牌选择策略
+# 可选值: 'green', 'blue', 'purple', 'gold', 'none'
+# 'none' 代表不选择任何卡牌，直接开始挑战（如果界面有"开始挑战"按钮）
+selected_book_type: "green"
+
+
+# =================== 图像资源路径 ===================
+# 所有图片都存放在 assets/images 目录下
+# 如果你使用了自定义的截图，请替换相应的文件名
+image_paths:
+  # --- 核心按钮 ---
+  next_wave: "assets/images/next_wave_button.png"
+  exit: "assets/images/exit_button.png"
+  retry: "assets/images/retry_button.png"
+  start_challenge: "assets/images/start_challenge_button.png"
+
+  # --- 书籍/卡牌 ---
+  books:
+    green: "assets/images/green_book_card.png"
+    blue: "assets/images/blue_book_card.png"
+    purple: "assets/images/purple_book_card.png"
+    gold: "assets/images/gold_book_card.png"
