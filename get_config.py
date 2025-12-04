@@ -1,110 +1,95 @@
 import cv2
 import numpy as np
 import mss
-import pydirectinput
-import time
 
-# ================= 核心配置区域 =================
+# ================= 配置区域 =================
+# 【关键】请在这里填入你要调试的区域坐标
+# 1. 调试“蓝条/鱼”时，填入中间长条的坐标
+# 2. 调试“光圈”时，填入右下角图标的坐标
+MONITOR = {"left": 2005, "top": 950, "width": 350, "height": 350}
+# ===========================================
 
-# 1. 监控区域 (保持你之前设置的)
-MONITOR = {'left': 2160, 'top': 520, 'width': 35, 'height': 530}
 
-# 2. 视觉识别参数 (使用你调试好的参数)
-# 蓝条 (Catcher)
-BLUE_LOWER = np.array([110, 150, 80])
-BLUE_UPPER = np.array([128, 255, 255])
+def nothing(x):
+    pass
 
-# 鱼 (Fish)
-FISH_LOWER = np.array([0, 0, 180])
-FISH_UPPER = np.array([179, 15, 255])
 
-# 3. 游戏手感微调
-THRESHOLD = 20 
+def run_hsv_tuner():
+    win_ctrl = "Controls"
+    win_view = "Preview (Left:Original Right:Filter)"
 
-# ==============================================
+    cv2.namedWindow(win_ctrl)
+    cv2.resizeWindow(win_ctrl, 400, 300)
+    cv2.namedWindow(win_view)
 
-def get_center_y(mask):
-    """ 计算掩膜中白色区域的中心 Y 坐标 """
-    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    if contours:
-        c = max(contours, key=cv2.contourArea)
-        # 过滤过小的噪点 (例如小于10像素的误识别)
-        if cv2.contourArea(c) < 10:
-            return None
-        x, y, w, h = cv2.boundingRect(c)
-        return y + h // 2 
-    return None
+    # ==========================================
+    # 【新增】设置窗口置顶 (Always on Top)
+    # 1 表示置顶，0 表示取消
+    # ==========================================
+    try:
+        cv2.setWindowProperty(win_ctrl, cv2.WND_PROP_TOPMOST, 1)
+        cv2.setWindowProperty(win_view, cv2.WND_PROP_TOPMOST, 1)
+    except:
+        print("⚠️ 当前 OpenCV 版本不支持置顶属性，窗口可能无法保持最前。")
 
-def auto_fisher():
-    print("✅ 脚本已启动！")
-    print("🛡️ 安全模式：只有同时看到蓝条和鱼时才会操作。")
-    print("按 'Ctrl + C' 停止脚本。")
-    time.sleep(2)
+    # 创建6个滑动条
+    cv2.createTrackbar("H Min", win_ctrl, 0, 179, nothing)
+    cv2.createTrackbar("H Max", win_ctrl, 179, 179, nothing)
+    cv2.createTrackbar("S Min", win_ctrl, 0, 255, nothing)
+    cv2.createTrackbar("S Max", win_ctrl, 255, 255, nothing)
+    cv2.createTrackbar("V Min", win_ctrl, 0, 255, nothing)
+    cv2.createTrackbar("V Max", win_ctrl, 255, 255, nothing)
+
+    print(f"✅ 调试器启动！监控区域: {MONITOR}")
+    print(f"👉 目标：调节滑条，让你的【目标物体】变白，【背景】变黑。")
+    print(f"⌨️  按 's' 保存参数，按 'q' 退出。")
 
     with mss.mss() as sct:
-        # 状态标记
-        is_holding = False
-        last_status = "IDLE" # 记录上一次状态，防止print刷屏
-
         while True:
-            # 1. 极速截屏与图像处理
-            img_bgra = np.array(sct.grab(MONITOR))
-            img_hsv = cv2.cvtColor(img_bgra, cv2.COLOR_BGRA2BGR)
-            img_hsv = cv2.cvtColor(img_hsv, cv2.COLOR_BGR2HSV)
+            try:
+                # 截屏
+                img_bgra = np.array(sct.grab(MONITOR), dtype=np.uint8)
+            except:
+                print("❌ 坐标错误，请检查 MONITOR 配置")
+                break
 
-            # 2. 识别目标
-            mask_bar = cv2.inRange(img_hsv, BLUE_LOWER, BLUE_UPPER)
-            mask_fish = cv2.inRange(img_hsv, FISH_LOWER, FISH_UPPER)
+            # 转换颜色
+            img_bgr = cv2.cvtColor(img_bgra, cv2.COLOR_BGRA2BGR)
+            hsv = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2HSV)
 
-            bar_y = get_center_y(mask_bar)
-            fish_y = get_center_y(mask_fish)
+            # 检查窗口是否关闭
+            if cv2.getWindowProperty(win_ctrl, cv2.WND_PROP_VISIBLE) < 1:
+                break
 
-            # ================= 核心状态监测 =================
-            
-            # 只有当两者都存在(不为None)时，才视为有效状态
-            if bar_y is not None and fish_y is not None:
-                
-                # [状态更新] 如果之前是空闲，现在变成了钓鱼，打印提示
-                if last_status == "IDLE":
-                    print("🎣 监测到目标，开始自动控制...")
-                    last_status = "FISHING"
+            # 读取滑条
+            h_min = cv2.getTrackbarPos("H Min", win_ctrl)
+            h_max = cv2.getTrackbarPos("H Max", win_ctrl)
+            s_min = cv2.getTrackbarPos("S Min", win_ctrl)
+            s_max = cv2.getTrackbarPos("S Max", win_ctrl)
+            v_min = cv2.getTrackbarPos("V Min", win_ctrl)
+            v_max = cv2.getTrackbarPos("V Max", win_ctrl)
 
-                # --- 正常的PID控制逻辑 ---
-                diff = fish_y - bar_y
-                
-                if diff < -THRESHOLD: # 鱼在上方，追！
-                    if not is_holding:
-                        pydirectinput.keyDown('space')
-                        is_holding = True
-                
-                elif diff > THRESHOLD: # 鱼在下方，放！
-                    if is_holding:
-                        pydirectinput.keyUp('space')
-                        is_holding = False
-                
-                else: # 重叠中，维持悬停
-                    if is_holding:
-                        pydirectinput.keyUp('space')
-                        is_holding = False
-                    # 可选：点按维持高度
-                    # pydirectinput.press('space')
+            # 生成掩膜 (黑白图)
+            lower = np.array([h_min, s_min, v_min])
+            upper = np.array([h_max, s_max, v_max])
+            mask = cv2.inRange(hsv, lower, upper)
 
-            else:
-                # ================= 丢失目标 =================
-                # 无论是鱼跑了，还是蓝条没了，统统视为异常/结束
-                
-                if is_holding:
-                    # ⚠️ 紧急保险：只要丢失视野，必须立刻松开空格，防止卡死
-                    pydirectinput.keyUp('space')
-                    is_holding = False
-                
-                # [状态更新]
-                if last_status == "FISHING":
-                    print("💤 目标丢失 (钓鱼结束或中断)，等待中...")
-                    last_status = "IDLE"
+            # 生成预览 (原图 + 掩膜)
+            mask_3ch = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
+            preview = np.hstack((img_bgr, mask_3ch))
 
-            # 极短休眠
-            time.sleep(0.01)
+            cv2.imshow(win_view, preview)
+
+            key = cv2.waitKey(1) & 0xFF
+
+            if key == ord("s"):
+                print(f"\n====== ✂️ 请复制以下代码 ======")
+                print(f"LOWER = np.array([{h_min}, {s_min}, {v_min}])")
+                print(f"UPPER = np.array([{h_max}, {s_max}, {v_max}])")
+                print(f"==============================\n")
+
+    cv2.destroyAllWindows()
+
 
 if __name__ == "__main__":
-    auto_fisher()
+    run_hsv_tuner()
