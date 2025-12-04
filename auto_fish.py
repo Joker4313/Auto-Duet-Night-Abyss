@@ -12,7 +12,7 @@ GAME_ROI = {"left": 2160, "top": 520, "width": 35, "height": 530}
 BITE_ROI = {"left": 2005, "top": 950, "width": 350, "height": 350}
 
 # 【新增】空白区域点击坐标 (用于关闭结算)
-EXIT_CLICK_POS = (1800, 1000) 
+EXIT_CLICK_POS = (1800, 1000)
 
 # 2. 颜色参数
 RING_LOWER = np.array([6, 50, 180])
@@ -24,8 +24,8 @@ FISH_LOWER = np.array([0, 0, 180])
 FISH_UPPER = np.array([179, 15, 255])
 
 # 3. 阈值设置
-COLOR_PIXEL_THRESHOLD = 1000  
-CONFIDENCE_THRESHOLD = 0.8  
+COLOR_PIXEL_THRESHOLD = 1000
+CONFIDENCE_THRESHOLD = 0.8
 
 # ==============================================================
 
@@ -34,14 +34,14 @@ templates = {}
 
 # 加载 Space 模板
 if os.path.exists("cast_icon.png"):
-    templates['SPACE'] = cv2.imread("cast_icon.png", 0)
+    templates["SPACE"] = cv2.imread("cast_icon.png", 0)
     print("✅ 已加载 Space 抛竿模板")
 else:
     print("❌ 未找到 cast_icon.png (Space)")
 
 # 加载 E 模板
 if os.path.exists("cast_icon_e.png"):
-    templates['E'] = cv2.imread("cast_icon_e.png", 0)
+    templates["E"] = cv2.imread("cast_icon_e.png", 0)
     print("✅ 已加载 E 抛竿模板")
 else:
     print("⚠️ 未找到 cast_icon_e.png，遇到E键情况将无法自动抛竿！")
@@ -53,9 +53,9 @@ def check_icon(sct, template):
     """
     if template is None:
         return 0
-    
+
     # 全屏搜索 (主显示器)
-    monitor = sct.monitors[1] 
+    monitor = sct.monitors[1]
     img = np.array(sct.grab(monitor))
     img_gray = cv2.cvtColor(img, cv2.COLOR_BGRA2GRAY)
 
@@ -112,14 +112,16 @@ def auto_fishing_bot():
                     continue
 
                 # 【修改点 2】分别检测两个图标
-                conf_space = check_icon(sct, templates.get('SPACE'))
-                conf_e = check_icon(sct, templates.get('E'))
+                conf_space = check_icon(sct, templates.get("SPACE"))
+                conf_e = check_icon(sct, templates.get("E"))
 
                 # 优先判断 Space (通常 Space 是默认)
                 if conf_space > CONFIDENCE_THRESHOLD:
-                    print(f"👀 发现 Space 图标 (相似度: {conf_space:.2f}) -> 按 Space 抛竿")
+                    print(
+                        f"👀 发现 Space 图标 (相似度: {conf_space:.2f}) -> 按 Space 抛竿"
+                    )
                     time.sleep(0.5)
-                    pydirectinput.press("space") # 动作：按 Space
+                    pydirectinput.press("space")  # 动作：按 Space
                     time.sleep(2.5)
                     state = "WAITING"
 
@@ -127,10 +129,10 @@ def auto_fishing_bot():
                 elif conf_e > CONFIDENCE_THRESHOLD:
                     print(f"👀 发现 E 图标 (相似度: {conf_e:.2f}) -> 按 E 抛竿")
                     time.sleep(0.5)
-                    pydirectinput.press("e")     # 动作：按 E
+                    pydirectinput.press("e")  # 动作：按 E
                     time.sleep(2.5)
                     state = "WAITING"
-                
+
                 else:
                     # 都没找到
                     pass
@@ -147,7 +149,9 @@ def auto_fishing_bot():
 
                 if matched_pixels > COLOR_PIXEL_THRESHOLD:
                     print(f"⚡ 咬钩! (像素: {matched_pixels}) -> 提竿!")
-                    pydirectinput.press("space") # 提竿通常还是 Space，如果这里也是 E，请修改
+                    pydirectinput.press(
+                        "space"
+                    )  # 提竿通常还是 Space，如果这里也是 E，请修改
                     time.sleep(0.2)
                     state = "PLAYING"
                     no_fish_timer = time.time()
@@ -190,19 +194,20 @@ def auto_fishing_bot():
                         is_holding_space = False
 
                     if time.time() - no_fish_timer > 3.0:
-                        print("🎉 钓鱼结束，准备退出结算...")
-                        time.sleep(1) 
-                        
-                        # 点击退出结算
-                        print(f"🖱️ 点击坐标 {EXIT_CLICK_POS}")
+                        print("\n🎉 钓鱼结束，关闭结算...")
+                        time.sleep(3.5)  # 缩短等待时间，抢时间窗口
+
+                        print(f"🖱️ 点击退出 {EXIT_CLICK_POS}")
                         pydirectinput.moveTo(EXIT_CLICK_POS[0], EXIT_CLICK_POS[1])
-                        time.sleep(0.2)
+                        time.sleep(0.1)
                         pydirectinput.click()
-                        time.sleep(1.5)
-                        
+
+                        # 点击后只需极短等待，立刻开始寻找E图标
+                        time.sleep(0.5)
                         state = "IDLE"
 
             time.sleep(0.01)
+
 
 if __name__ == "__main__":
     auto_fishing_bot()
