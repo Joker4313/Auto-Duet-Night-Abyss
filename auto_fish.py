@@ -225,7 +225,7 @@ def auto_fishing_bot():
 
                     if time.time() - no_fish_timer > 3.0:
                         print("\n🎉 钓鱼结束，关闭结算...")
-                        time.sleep(3.5)
+                        time.sleep(1.5)
 
                         print(f"🖱️ 点击退出 {EXIT_CLICK_POS}")
                         pydirectinput.moveTo(EXIT_CLICK_POS[0], EXIT_CLICK_POS[1])
