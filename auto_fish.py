@@ -50,14 +50,14 @@ CURRENT_RING_UPPER = None
 
 # 加载模板
 templates = {}
-if os.path.exists("cast_icon.png"):
-    templates["SPACE"] = cv2.imread("cast_icon.png", 0)
+if os.path.exists("assets/images/cast_icon.png"):
+    templates["SPACE"] = cv2.imread("assets/images/cast_icon.png", 0)
     print("✅ Space 模板加载成功")
 else:
     print("❌ 警告: 没找到 cast_icon.png")
 
-if os.path.exists("cast_icon_e.png"):
-    templates["E"] = cv2.imread("cast_icon_e.png", 0)
+if os.path.exists("assets/images/cast_icon_e.png"):
+    templates["E"] = cv2.imread("assets/images/cast_icon_e.png", 0)
     print("✅ E 模板加载成功")
 else:
     print("⚠️ 未找到 cast_icon_e.png")

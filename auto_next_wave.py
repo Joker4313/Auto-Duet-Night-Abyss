@@ -56,17 +56,17 @@ def random_click(box, offset_y_ratio=0.0):
 
 def auto_click_next_wave():
     # --- 图片文件配置 ---
-    img_next_wave = "next_wave_button.png"  # 下一波按钮
-    img_exit_button = "exit_button.png"  # 结算界面的"退出"按钮
-    img_retry_button = "retry_button.png"  # "再次进行"按钮
-    img_start_challenge = "start_challenge_button.png"  # 开始挑战按钮
+    img_next_wave = "assets/images/next_wave_button.png"  # 下一波按钮
+    img_exit_button = "assets/images/exit_button.png"  # 结算界面的"退出"按钮
+    img_retry_button = "assets/images/retry_button.png"  # "再次进行"按钮
+    img_start_challenge = "assets/images/start_challenge_button.png"  # 开始挑战按钮
 
     # 书籍图片映射表
     book_images = {
-        "green": "green_book_card.png",
-        "blue": "blue_book_card.png",
-        "purple": "purple_book_card.png",
-        "gold": "gold_book_card.png",
+        "green": "assets/images/green_book_card.png",
+        "blue": "assets/images/blue_book_card.png",
+        "purple": "assets/images/purple_book_card.png",
+        "gold": "assets/images/gold_book_card.png",
         "none": None,
     }
 
